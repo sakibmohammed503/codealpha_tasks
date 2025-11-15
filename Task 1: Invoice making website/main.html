@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Invoice Maker</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Invoice Maker</h1>
+            <p class="app-description">Create professional invoices quickly and easily. Fill in your details, add line items, and download or print your invoice.</p>
+        </header>
+        
+        <div class="app-container">
+            <div class="form-section">
+                <h2 class="section-title">Invoice Details</h2>
+                
+                <div class="form-group">
+                    <label for="invoice-number">Invoice Number</label>
+                    <input type="text" id="invoice-number" placeholder="INV-001">
+                </div>
+                
+                <div class="form-group">
+                    <label for="invoice-date">Invoice Date</label>
+                    <input type="date" id="invoice-date">
+                </div>
+                
+                <div class="form-group">
+                    <label for="due-date">Due Date</label>
+                    <input type="date" id="due-date">
+                </div>
+                
+                <h2 class="section-title">Your Information</h2>
+                
+                <div class="form-group">
+                    <label for="your-name">Your Name/Company</label>
+                    <input type="text" id="your-name" placeholder="Your Company Name">
+                </div>
+                
+                <div class="form-group">
+                    <label for="your-address">Your Address</label>
+                    <textarea id="your-address" rows="3" placeholder="Your complete address"></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label for="your-email">Your Email</label>
+                    <input type="email" id="your-email" placeholder="your.email@example.com">
+                </div>
+                
+                <div class="form-group">
+                    <label for="your-phone">Your Phone</label>
+                    <input type="tel" id="your-phone" placeholder="Your phone number">
+                </div>
+                
+                <h2 class="section-title">Client Information</h2>
+                
+                <div class="form-group">
+                    <label for="client-name">Client Name/Company</label>
+                    <input type="text" id="client-name" placeholder="Client Company Name">
+                </div>
+                
+                <div class="form-group">
+                    <label for="client-address">Client Address</label>
+                    <textarea id="client-address" rows="3" placeholder="Client's complete address"></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label for="client-email">Client Email</label>
+                    <input type="email" id="client-email" placeholder="client@example.com">
+                </div>
+                
+                <h2 class="section-title">Items</h2>
+                
+                <table class="items-table">
+                    <thead>
+                        <tr>
+                            <th>Description</th>
+                            <th width="100">Quantity</th>
+                            <th width="120">Price</th>
+                            <th width="120">Total</th>
+                            <th width="50">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="items-container">
+                        <tr>
+                            <td><input type="text" class="item-desc" placeholder="Item description"></td>
+                            <td><input type="number" class="item-qty" value="1" min="1"></td>
+                            <td><input type="number" class="item-price" value="0.00" step="0.01" min="0"></td>
+                            <td class="item-total">0.00</td>
+                            <td><button class="btn btn-danger remove-item">×</button></td>
+                        </tr>
+                    </tbody>
+                </table>
+                
+                <button id="add-item" class="btn btn-primary">Add Item</button>
+                
+                <div class="form-group">
+                    <label for="tax-rate">Tax Rate (%)</label>
+                    <input type="number" id="tax-rate" value="10" step="0.1" min="0">
+                </div>
+                
+                <div class="form-group">
+                    <label for="notes">Notes</label>
+                    <textarea id="notes" rows="3" placeholder="Any additional notes..."></textarea>
+                </div>
+            </div>
+            
+            <div class="preview-section">
+                <h2 class="section-title">Invoice Preview</h2>
+                
+                <div class="invoice-preview" id="invoice-preview">
+                    <div class="empty-state">
+                        <h3>Your invoice will appear here</h3>
+                        <p>Fill in the form to see a preview of your invoice</p>
+                    </div>
+                </div>
+                
+                <div class="action-buttons">
+                    <button id="generate-pdf" class="btn btn-success">Download PDF</button>
+                    <button id="print-invoice" class="btn btn-primary">Print Invoice</button>
+                    <button id="clear-form" class="btn btn-danger">Clear Form</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
