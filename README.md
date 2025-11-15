@@ -1,2 +1,2 @@
-# codealpha_tasks
-My internship
+# someRandomProjects
+Just Do What U Want
