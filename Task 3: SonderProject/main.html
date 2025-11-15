@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sonder Project | Interactive Story Map</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', sans-serif;
+        }
+
+        :root {
+            --primary: #4a6fa5;
+            --secondary: #6b8cbc;
+            --accent: #88a0c7;
+            --dark: #1a1a2e;
+            --darker: #16213e;
+            --light: #f5f5f5;
+            --mist: rgba(26, 26, 46, 0.9);
+            --card-bg: rgba(255, 255, 255, 0.95);
+        }
+
+        body {
+            background: linear-gradient(135deg, var(--darker) 0%, var(--dark) 100%);
+            color: var(--light);
+            overflow: hidden;
+            height: 100vh;
+        }
+
+        .container {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            position: relative;
+        }
+
+        header {
+            padding: 1.5rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(22, 33, 62, 0.8);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(74, 111, 165, 0.3);
+            z-index: 1000;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .logo-text {
+            font-size: 1.8rem;
+            font-weight: 600;
+            color: var(--light);
+            letter-spacing: -0.5px;
+        }
+
+        .logo-accent {
+            color: var(--accent);
+            font-weight: 300;
+        }
+
+        nav ul {
+            display: flex;
+            list-style: none;
+            gap: 2rem;
+        }
+
+        nav a {
+            color: var(--light);
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            position: relative;
+            padding: 5px 0;
+            font-size: 0.95rem;
+        }
+
+        nav a:hover {
+            color: var(--accent);
+        }
+
+        nav a::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 0;
+            height: 1px;
+            background: var(--accent);
+            transition: width 0.3s ease;
+        }
+
+        nav a:hover::after {
+            width: 100%;
+        }
+
+        .main-content {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        .map-container {
+            flex: 1;
+            position: relative;
+            overflow: hidden;
+        }
+
+        #map {
+            width: 100%;
+            height: 100%;
+        }
+
+        .mist-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--mist);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 500;
+            transition: opacity 1s ease;
+        }
+
+        .mist-overlay.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .intro-text {
+            text-align: center;
+            max-width: 600px;
+            padding: 2rem;
+        }
+
+        .intro-text h1 {
+            font-size: 2.8rem;
+            margin-bottom: 1.5rem;
+            color: var(--light);
+            font-weight: 600;
+            line-height: 1.2;
+        }
+
+        .intro-text p {
+            font-size: 1.1rem;
+            line-height: 1.6;
+            margin-bottom: 2rem;
+            color: rgba(245, 245, 245, 0.8);
+            font-weight: 400;
+        }
+
+        .cta-button {
+            background: var(--primary);
+            border: none;
+            padding: 12px 30px;
+            border-radius: 4px;
+            color: white;
+            font-weight: 500;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            letter-spacing: 0.5px;
+        }
+
+        .cta-button:hover {
+            background: var(--secondary);
+            transform: translateY(-2px);
+        }
+
+        .story-panel {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 80%;
+            max-width: 600px;
+            background: var(--card-bg);
+            border-radius: 8px;
+            padding: 2rem;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            z-index: 1000;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.5s ease;
+            color: #333;
+        }
+
+        .story-panel.active {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        .story-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+        }
+
+        .story-title {
+            font-size: 1.4rem;
+            font-weight: 600;
+            color: var(--primary);
+        }
+
+        .close-button {
+            background: none;
+            border: none;
+            color: #666;
+            font-size: 1.5rem;
+            cursor: pointer;
+            transition: color 0.3s ease;
+        }
+
+        .close-button:hover {
+            color: #333;
+        }
+
+        .story-content {
+            line-height: 1.7;
+            margin-bottom: 1.5rem;
+            font-size: 1.05rem;
+            color: #444;
+        }
+
+        .story-location {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--primary);
+            font-weight: 500;
+            font-size: 0.9rem;
+        }
+
+        .location-icon {
+            font-size: 1rem;
+        }
+
+        .controls {
+            position: absolute;
+            bottom: 2rem;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 1rem;
+            z-index: 800;
+        }
+
+        .control-button {
+            background: rgba(22, 33, 62, 0.8);
+            border: 1px solid rgba(74, 111, 165, 0.5);
+            color: var(--light);
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(5px);
+            font-weight: 500;
+            font-size: 0.9rem;
+        }
+
+        .control-button:hover {
+            background: rgba(74, 111, 165, 0.6);
+            border-color: var(--accent);
+        }
+
+        .pulse {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: var(--accent);
+            box-shadow: 0 0 0 0 rgba(136, 160, 199, 0.7);
+            animation: pulse 2s infinite;
+            z-index: 400;
+            pointer-events: none;
+        }
+
+        @keyframes pulse {
+            0% {
+                transform: scale(0.95);
+                box-shadow: 0 0 0 0 rgba(136, 160, 199, 0.7);
+            }
+            70% {
+                transform: scale(1.5);
+                box-shadow: 0 0 0 15px rgba(136, 160, 199, 0);
+            }
+            100% {
+                transform: scale(0.95);
+                box-shadow: 0 0 0 0 rgba(136, 160, 199, 0);
+            }
+        }
+
+        .floating-particles {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 300;
+        }
+
+        .particle {
+            position: absolute;
+            width: 3px;
+            height: 3px;
+            background: var(--accent);
+            border-radius: 50%;
+            opacity: 0.5;
+        }
+
+        footer {
+            padding: 1rem 2rem;
+            text-align: center;
+            background: rgba(22, 33, 62, 0.8);
+            border-top: 1px solid rgba(74, 111, 165, 0.3);
+            font-size: 0.85rem;
+            color: rgba(245, 245, 245, 0.6);
+        }
+
+        @media (max-width: 768px) {
+            header {
+                flex-direction: column;
+                gap: 1rem;
+                padding: 1rem;
+            }
+            
+            nav ul {
+                gap: 1rem;
+            }
+            
+            .intro-text h1 {
+                font-size: 2rem;
+            }
+            
+            .story-panel {
+                width: 95%;
+                padding: 1.5rem;
+            }
+            
+            .controls {
+                flex-direction: column;
+                width: 80%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="logo">
+                <div class="logo-text">Sonder<span class="logo-accent">Project</span></div>
+            </div>
+            <nav>
+                <ul>
+                    <li><a href="#">Home</a></li>
+                    <li><a href="#">About</a></li>
+                    <li><a href="#">Submit Story</a></li>
+                    <li><a href="#">Explore</a></li>
+                </ul>
+            </nav>
+        </header>
+        
+        <div class="main-content">
+            <div class="map-container">
+                <div id="map"></div>
+                <div class="mist-overlay">
+                    <div class="intro-text">
+                        <h1>Discover the Hidden Stories of the World</h1>
+                        <p>Every place holds countless untold stories. Click anywhere on the map to reveal anonymous, human moments shared by people who were there.</p>
+                        <button class="cta-button" id="explore-button">Explore Stories</button>
+                    </div>
+                </div>
+                
+                <div class="story-panel">
+                    <div class="story-header">
+                        <div class="story-title">A Moment of Connection</div>
+                        <button class="close-button">&times;</button>
+                    </div>
+                    <div class="story-content">
+                        I was sitting alone in a small café in Paris, feeling homesick and disconnected. An elderly gentleman at the next table noticed my melancholy and offered me a piece of his pastry. We didn't speak the same language, but we shared a smile and a moment of human connection that reminded me we're never truly alone.
+                    </div>
+                    <div class="story-location">
+                        <span class="location-icon">📍</span>
+                        <span>Paris, France</span>
+                    </div>
+                </div>
+                
+                <div class="floating-particles" id="particles-container"></div>
+            </div>
+        </div>
+        
+        <div class="controls">
+            <button class="control-button" id="random-story">Random Story</button>
+            <button class="control-button" id="clear-mist">Clear Mist</button>
+            <button class="control-button" id="submit-story">Submit Your Story</button>
+        </div>
+        
+        <footer>
+            <p>The Sonder Project &copy; 2023 | Connecting humanity through shared moments</p>
+        </footer>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+    <script>
+        // Initialize the map
+        const map = L.map('map', {
+            center: [20, 0],
+            zoom: 2,
+            minZoom: 2,
+            maxBounds: [[-90, -180], [90, 180]],
+            maxBoundsViscosity: 1.0
+        });
+
+        // Add a tile layer (using a dark theme)
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+            subdomains: 'abcd',
+            maxZoom: 20
+        }).addTo(map);
+
+        // DOM elements
+        const mistOverlay = document.querySelector('.mist-overlay');
+        const exploreButton = document.getElementById('explore-button');
+        const storyPanel = document.querySelector('.story-panel');
+        const closeButton = document.querySelector('.close-button');
+        const randomStoryButton = document.getElementById('random-story');
+        const clearMistButton = document.getElementById('clear-mist');
+        const submitStoryButton = document.getElementById('submit-story');
+        const particlesContainer = document.getElementById('particles-container');
+
+        // Sample stories data
+        const stories = [
+            {
+                title: "Unexpected Kindness",
+                content: "I was lost in the Tokyo subway system, clearly looking confused with my oversized backpack. A salaryman who didn't speak English noticed my distress and walked 15 minutes out of his way to lead me to the right station, bowing politely before hurrying off.",
+                location: "Tokyo, Japan",
+                coords: [35.6762, 139.6503]
+            },
+            {
+                title: "Midnight Connection",
+                content: "At 3 AM in a Marrakech hostel courtyard, I shared mint tea with a Norwegian photographer and a local artisan. We didn't share a common language, but through gestures and smiles, we connected deeply under the starry desert sky.",
+                location: "Marrakech, Morocco",
+                coords: [31.6295, -7.9811]
+            },
+            {
+                title: "Rainy Day Rescue",
+                content: "Caught in a sudden downpour in Rome, I was sheltering under a narrow awning when an elderly Italian woman pulled me into her doorway, handed me a towel, and insisted I wait out the storm with a cup of hot espresso.",
+                location: "Rome, Italy",
+                coords: [41.9028, 12.4964]
+            },
+            {
+                title: "Shared Sunset",
+                content: "Watching the sunset over the Grand Canyon, I struck up a conversation with a stranger next to me. We discovered we were both there to process major life changes, and in that moment, we felt less alone in our journeys.",
+                location: "Grand Canyon, USA",
+                coords: [36.0544, -112.1401]
+            },
+            {
+                title: "Market Laughter",
+                content: "Trying to bargain at a Bangkok floating market, I accidentally offered an absurdly low price. Instead of being offended, the vendor burst into laughter, then taught me the proper way to haggle while giving me samples of every fruit on her boat.",
+                location: "Bangkok, Thailand",
+                coords: [13.7563, 100.5018]
+            },
+            {
+                title: "Silent Understanding",
+                content: "On a crowded train in Mumbai, I witnessed a young mother struggling with her groceries and toddler. Without a word, three different passengers simultaneously stood up to offer their seats, creating a moment of silent community.",
+                location: "Mumbai, India",
+                coords: [19.0760, 72.8777]
+            }
+        ];
+
+        // Create floating particles
+        function createParticles() {
+            for (let i = 0; i < 40; i++) {
+                const particle = document.createElement('div');
+                particle.classList.add('particle');
+                
+                // Random position
+                const left = Math.random() * 100;
+                const top = Math.random() * 100;
+                
+                particle.style.left = `${left}%`;
+                particle.style.top = `${top}%`;
+                
+                // Random animation
+                const duration = 15 + Math.random() * 20;
+                const delay = Math.random() * 5;
+                
+                particle.style.animation = `float ${duration}s ${delay}s infinite linear`;
+                
+                particlesContainer.appendChild(particle);
+            }
+        }
+
+        // Show a story at specific coordinates
+        function showStory(story, coords) {
+            // Update story panel content
+            document.querySelector('.story-title').textContent = story.title;
+            document.querySelector('.story-content').textContent = story.content;
+            document.querySelector('.story-location span:last-child').textContent = story.location;
+            
+            // Show the story panel
+            storyPanel.classList.add('active');
+            
+            // Create a pulse effect at the story location
+            if (coords) {
+                const pulse = document.createElement('div');
+                pulse.classList.add('pulse');
+                
+                const point = map.latLngToContainerPoint(coords);
+                pulse.style.left = `${point.x - 10}px`;
+                pulse.style.top = `${point.y - 10}px`;
+                
+                document.querySelector('.map-container').appendChild(pulse);
+                
+                // Remove pulse after animation
+                setTimeout(() => {
+                    pulse.remove();
+                }, 2000);
+            }
+        }
+
+        // Get a random story
+        function getRandomStory() {
+            return stories[Math.floor(Math.random() * stories.length)];
+        }
+
+        // Event listeners
+        exploreButton.addEventListener('click', () => {
+            mistOverlay.classList.add('hidden');
+        });
+
+        closeButton.addEventListener('click', () => {
+            storyPanel.classList.remove('active');
+        });
+
+        randomStoryButton.addEventListener('click', () => {
+            const randomStory = getRandomStory();
+            showStory(randomStory, randomStory.coords);
+            
+            // Pan to the story location
+            map.panTo(randomStory.coords);
+        });
+
+        clearMistButton.addEventListener('click', () => {
+            mistOverlay.classList.add('hidden');
+        });
+
+        submitStoryButton.addEventListener('click', () => {
+            alert("Story submission feature coming soon! In a full implementation, this would open a form to submit your own story.");
+        });
+
+        // Map click event
+        map.on('click', (e) => {
+            // Clear any existing mist
+            mistOverlay.classList.add('hidden');
+            
+            // Show a random story
+            const randomStory = getRandomStory();
+            showStory(randomStory, e.latlng);
+        });
+
+        // Close story panel when clicking outside
+        document.addEventListener('click', (e) => {
+            if (storyPanel.classList.contains('active') && 
+                !storyPanel.contains(e.target) && 
+                !e.target.classList.contains('control-button')) {
+                storyPanel.classList.remove('active');
+            }
+        });
+
+        // Initialize particles
+        createParticles();
+
+        // Add CSS for particle animation
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes float {
+                0% {
+                    transform: translate(0, 0) rotate(0deg);
+                    opacity: 0.5;
+                }
+                25% {
+                    transform: translate(10px, -10px) rotate(90deg);
+                    opacity: 0.7;
+                }
+                50% {
+                    transform: translate(20px, 0) rotate(180deg);
+                    opacity: 0.5;
+                }
+                75% {
+                    transform: translate(10px, 10px) rotate(270deg);
+                    opacity: 0.3;
+                }
+                100% {
+                    transform: translate(0, 0) rotate(360deg);
+                    opacity: 0.5;
+                }
+            }
+        `;
+        document.head.appendChild(style);
+    </script>
+</body>
+</html>
